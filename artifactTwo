@@ -1,0 +1,116 @@
+'Function to count the number of sections for a store
+'NEW ENHANCEMENT THAT WAS ADDED
+Public Function calculateSectionTotals(arr() As Variant, intStore As String)
+
+'Used to keep track of number of sections and depts for a store
+Dim iCountSection As Integer
+Dim iCountDept As Integer
+
+
+'Used to keep track of amount of records in the array
+Dim iRowCount As Integer
+Dim iColCount As Integer
+
+
+
+'Loop through the records stored in the array
+For iRowCount = LBound(arr, 1) To UBound(arr, 1)
+        If arr(iRowCount, 1) = intStore Then 'Looks for only the store the user picked
+            iCountSection = iCountSection + 1
+            If iRowCount > 0 Then
+                If arr(iRowCount, 2) <> arr(iRowCount - 1, 2) Then
+                    iCountDept = iCountDept + 1 'Counts the number of departments for that store
+                End If
+            End If
+        End If
+Next iRowCount
+
+
+'Prints out the results to the user
+MsgBox "Store " & intStore & " has " & iCountSection & " sections." & vbNewLine _
+    & "There are " & iCountDept & " departments for that store."
+
+End Function
+
+'Used to populate an array with records from a table
+'NEW ENHANCEMENT TO PROGRAM
+Private Sub getAllSections()
+
+Dim dbDatabase As DAO.Database
+Dim rsSections As DAO.Recordset
+
+'Used to hold the count of records returned from table
+Dim iHolder As Integer
+
+'Used to hold the number of rows and columns of array
+Dim intRow As Integer
+Dim intCol As Integer
+
+
+'Set the recordset to the Sections table in current database
+Set dbDatabase = CurrentDb
+Set rsSections = dbDatabase.OpenRecordset("tblSections", dbOpenSnapshot)
+
+'Goes to the end of the recordset
+If Not (rsSections.EOF) Then
+    rsSections.MoveLast
+
+    'Gets the count of records returned
+    iHolder = rsSections.RecordCount
+    
+    ReDim holdSections(iHolder, 4) 'Intializes array to number of records, 4 columns
+    
+    rsSections.MoveFirst
+    
+    'Loops through the array, assigning multiple columns to each row
+    While Not rsSections.EOF
+        For intRow = 0 To (iHolder - 1)
+            For intCol = 1 To 4
+                holdSections(intRow, intCol) = rsSections.Fields(intCol)
+            Next intCol
+            rsSections.MoveNext
+        Next intRow
+    Wend
+
+
+End If
+
+
+dbDatabase.Close
+Set rsSections = Nothing
+Set dbDatabase = Nothing
+
+'Call function to display the data about the sections
+calculateSectionTotals holdSections(), Me.cboCountStore.Value
+
+End Sub
+
+'Calls function to send email based on filter, if any
+'NEW ADDITION TO PROGRAM
+Private Sub btnEmail_Click()
+
+'Makes sure the user picked a choice
+If Me.cboReportChoice.ListIndex < 0 Then
+    MsgBox "You must pick a store or all", vbInformation, "Error"
+Else
+    Select Case Me.cboReportChoice.Value
+        Case "All"
+            sendOutlookEmailWithFilter "", "Section Report", "", "rptSections"
+        Case "505"
+            sendOutlookEmailWithFilter "", "Section Report", "", "rptSections", "StoreNumber = 505"
+        Case "512"
+            sendOutlookEmailWithFilter "", "Section Report", "", "rptSections", "StoreNumber = 512"
+        Case "526"
+            sendOutlookEmailWithFilter "", "Section Report", "", "rptSections", "StoreNumber = 526"
+        Case "615"
+            sendOutlookEmailWithFilter "", "Section Report", "", "rptSections", "StoreNumber = 615"
+        Case Default
+            DoCmd.OpenReport "rptSections", acViewPreview, "", "", acWindowNormal
+    End Select
+
+
+End If
+
+
+
+End Sub
