@@ -1,0 +1,232 @@
+'Function returns what quarter the inventory took place based off of month and year
+Public Function quarterAvailable(sDates As Date) As String
+
+Dim tempYear As Integer
+Dim tempMonth As Integer
+Dim tempQuarter As String
+
+tempYear = Year(sDates)
+tempMonth = Month(sDates)
+
+'Case determines what month would be for which quarter
+Select Case tempMonth
+    Case 3, 4
+        tempQuarter = "Quarter 1 " & tempYear
+    Case 6, 7
+        tempQuarter = "Quarter 2 " & tempYear
+    Case 9, 10
+        tempQuarter = "Quarter 3 " & tempYear
+    Case 12, 1
+        tempQuarter = "Quarter 4 " & tempYear
+    Case Else
+        tempQuarter = "Error"
+End Select
+
+
+quarterAvailable = tempQuarter
+
+End Function
+'Function takes in the quarter and year and returns the previous inventory quarter and year
+Public Function strPreviousQuarter(iQtr As String, iYear As String) As String
+
+Dim previousQtr As String
+
+Select Case iQtr
+    Case "1"
+        previousQtr = "Quarter 4 " & (iYear - 1)
+    Case "2"
+        previousQtr = "Quarter 1 " & iYear
+    Case "3"
+        previousQtr = "Quarter 2 " & iYear
+    Case "4"
+        previousQtr = "Quarter 3 " & iYear
+    Case Else
+        previousQtr = "Error"
+End Select
+
+strPreviousQuarter = previousQtr
+    
+End Function
+'Function determines the previous quarter from the string holding the current one
+Public Function lastQuarter(sString As String) As String
+
+Dim strHolder As String
+Dim strQtr As String
+Dim strYear As String
+
+Dim strNewQuarter As String
+
+'Pulls out just the quarter number and the year
+strHolder = StripOutCharType(sString, False)
+
+strQtr = Left(strHolder, 1)
+strYear = Right(strHolder, 4)
+
+strNewQuarter = strPreviousQuarter(strQtr, strYear)
+
+lastQuarter = strNewQuarter
+
+End Function
+
+'Function takes in the quarter, store and department and returns the cooresponding backroom value
+Public Function getBackroomNumbers(sQuarter As String, sStore As String, sDept As String) As String
+
+Dim dbDatabase As DAO.Database
+Dim qdfQuarterBackroom As DAO.QueryDef
+Dim rsQuarterBackroom As DAO.Recordset
+Dim rsFiltered As DAO.Recordset
+
+Dim sHolder As String
+
+sHolder = "SELECT [" & sQuarter & "] FROM qryBackroom_Final WHERE (Store = " & sStore _
+    & " AND Department = '" & sDept & "');"
+
+Set dbDatabase = CurrentDb
+
+'In case quarter entered doesn't exist
+On Error GoTo noNumbers
+    Set rsQuarterBackroom = dbDatabase.OpenRecordset(sHolder, dbOpenSnapshot)
+
+
+'Make sure a record exists, otherwise return 0
+If rsQuarterBackroom.EOF Or IsNull(rsQuarterBackroom.Fields(0)) Then
+    getBackroomNumbers = 0
+Else
+    getBackroomNumbers = rsQuarterBackroom.Fields(0)
+End If
+
+
+
+rsQuarterBackroom.Close
+Set dbDatabase = Nothing
+Set rsQuarterBackroom = Nothing
+
+'If the quarter doesn't exist, it returns zero for the amount
+Exit Function
+
+noNumbers:
+    getBackroomNumbers = 0
+
+End Function
+
+
+'Function takes in the quarter, store and department and returns the cooresponding overhead value
+Public Function getOverheadNumbers(sQuarter As String, sStore As String, sDept As String) As String
+
+Dim dbDatabase As DAO.Database
+Dim qdfQuarterOverhead As DAO.QueryDef
+Dim rsQuarterOverhead As DAO.Recordset
+Dim rsFiltered As DAO.Recordset
+
+Dim sHolder As String
+
+sHolder = "SELECT [" & sQuarter & "] FROM qryOverheads_Final WHERE (Store = " & sStore _
+    & " AND Department = '" & sDept & "');"
+
+Set dbDatabase = CurrentDb
+
+'In case quarter entered doesn't exist
+On Error GoTo noNumbers
+    Set rsQuarterOverhead = dbDatabase.OpenRecordset(sHolder, dbOpenSnapshot)
+
+'Make sure a record exists, otherwise return 0
+If rsQuarterOverhead.EOF Or IsNull(rsQuarterOverhead.Fields(0)) Then
+    getOverheadNumbers = 0
+Else
+    getOverheadNumbers = rsQuarterOverhead.Fields(0)
+End If
+
+rsQuarterOverhead.Close
+Set dbDatabase = Nothing
+Set rsQuarterOverhead = Nothing
+
+'If the quarter doesn't exist, it returns zero for the amount
+Exit Function
+
+noNumbers:
+    getOverheadNumbers = 0
+
+End Function
+
+
+'Function takes in the quarter, store and department and returns the cooresponding total value
+Public Function getTotalNumbers(sQuarter As String, sStore As String, sDept As String) As String
+
+Dim dbDatabase As DAO.Database
+Dim qdfQuarterTotal As DAO.QueryDef
+Dim rsQuarterTotal As DAO.Recordset
+Dim rsFiltered As DAO.Recordset
+
+Dim sHolder As String
+
+sHolder = "SELECT [" & sQuarter & "] FROM qryAislesDeptTotals_Final WHERE (Store = " & sStore _
+    & " AND Department = '" & sDept & "');"
+
+Set dbDatabase = CurrentDb
+
+'In case quarter entered doesn't exist
+On Error GoTo noNumbers
+    Set rsQuarterTotal = dbDatabase.OpenRecordset(sHolder, dbOpenSnapshot)
+
+'Make sure a record exists, otherwise return 0
+If rsQuarterTotal.EOF Or IsNull(rsQuarterTotal.Fields(0)) Then
+    getTotalNumbers = 0
+Else
+    getTotalNumbers = rsQuarterTotal.Fields(0)
+End If
+
+
+
+rsQuarterTotal.Close
+Set dbDatabase = Nothing
+Set rsQuarterTotal = Nothing
+
+'If the quarter doesn't exist, it returns zero for the amount
+Exit Function
+
+noNumbers:
+    getTotalNumbers = 0
+
+End Function
+
+'Function takes in the quarter, store and department and returns the cooresponding total value
+Public Function getAllStoreNumbers(sQuarter As String, sStore As String, sDept As String, _
+    sArea As String) As String
+
+Dim dbDatabase As DAO.Database
+Dim qdfStoreNumbers As DAO.QueryDef
+Dim rsStoreNumbers As DAO.Recordset
+Dim rsFiltered As DAO.Recordset
+
+Dim sHolder As String
+
+sHolder = "SELECT SumOfRetail FROM qryStoreTotals WHERE (Store = " & sStore _
+    & " AND Department = '" & sDept & "' AND Expr1 = '" & sQuarter _
+    & "' AND Area LIKE '" & sArea & "');"
+
+Set dbDatabase = CurrentDb
+
+'In case quarter entered doesn't exist
+On Error GoTo noNumbers
+    Set rsStoreNumbers = dbDatabase.OpenRecordset(sHolder, dbOpenSnapshot)
+
+'Make sure a record exists, otherwise return 0
+If rsStoreNumbers.EOF Then
+    getAllStoreNumbers = 0
+Else
+    getAllStoreNumbers = rsStoreNumbers!SumOfRetail
+End If
+
+
+
+rsStoreNumbers.Close
+Set dbDatabase = Nothing
+Set rsStoreNumbers = Nothing
+
+'If the quarter doesn't exist, it returns zero for the amount
+Exit Function
+
+noNumbers:
+    getAllStoreNumbers = 0
+
+End Function
