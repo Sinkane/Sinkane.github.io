@@ -1,0 +1,73 @@
+' Function to send an email through Outlook with two attachements.  It takes in 6 strings for the email address to
+' send it to, the subject, the message, the names of both attachements, and the filter used to generate the reports
+Public Function sendOutlookEmail(messageTo As String, mailSubject As String, msgBody As String, attachName1 As String, _
+    attachName2 As String, filterClause As String)
+    
+    Dim oApp As Outlook.Application
+    Dim oMail As MailItem
+    Dim fileName1 As String
+    Dim fileName2 As String
+    
+    
+    'Sets filter for report to specific event
+    reportSetFilter attachName1, filterClause
+    
+    'Assigns the path of the report to fileName1 to be added as attachment
+    fileName1 = Application.CurrentProject.Path & "\" & attachName1 & ".pdf"
+    DoCmd.OutputTo acOutputReport, attachName1, acFormatPDF, fileName1, False
+    
+    'Clears filter for report
+    reportClearFilter attachName1
+
+    
+    
+    'Sets filter for report to specific event
+    reportSetFilter attachName2, filterClause
+    
+    'Assigns the path of the report to fileName2 to be added as attachment
+    fileName2 = Application.CurrentProject.Path & "\" & attachName2 & ".pdf"
+    DoCmd.OutputTo acOutputReport, attachName2, acFormatPDF, fileName2, False
+    
+    'Clears filter for report
+    reportClearFilter attachName2
+
+
+    'Creates an outlook object
+    Set oApp = CreateObject("Outlook.application")
+    
+    'Sets all the attributes of the email being generated
+    Set oMail = oApp.CreateItem(olMailItem)
+    oMail.Body = msgBody
+    oMail.subject = mailSubject
+    oMail.To = messageTo
+    oMail.Attachments.Add fileName1
+    oMail.Attachments.Add fileName2
+    oMail.Display
+    Set oMail = Nothing
+    Set oApp = Nothing
+
+End Function
+'Function to set a filter for a report
+Public Function reportSetFilter(reportName As String, reportFilter As String)
+
+    'Opens the report in design view and applies the filter that was passed to the function,
+    'then saves it so the attachment has the filter
+    DoCmd.OpenReport reportName, acViewDesign
+    Reports(reportName).Filter = reportFilter
+    Reports(reportName).FilterOnLoad = True
+    DoCmd.Close acReport, reportName, acSaveYes
+
+End Function
+'Function to clear a filter for a report
+Public Function reportClearFilter(reportNameClear As String)
+
+    'Reopens up the report in design view, clears the filter, and saves it
+    DoCmd.OpenReport reportNameClear, acViewDesign
+    Reports(reportNameClear).Filter = ""
+    Reports(reportNameClear).FilterOnLoad = True
+    DoCmd.Close acReport, reportNameClear, acSaveYes
+
+
+End Function
+
+
